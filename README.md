@@ -16,11 +16,11 @@ $ python demos/noise_200.py
   t (iid / NW)    3.03 / 3.27
   p_single        0.00273   <- looks publishable
   family          200 trials
-  bar_q95         3.73      <- what a real factor needed
-  p_family        0.351     <- it is luck
+  bar_q95         3.66      <- what a real factor needed
+  p_family        0.339     <- it is luck
   verdict         REJECT
 
-  "Trial #200 of 200 — REJECT. IC=+0.0105, t=3.03, p_single=0.0027, p_family=0.351."
+  "Trial #200 of 200 — REJECT. IC=+0.0105, t=3.03, p_single=0.0027, p_family=0.339."
 ```
 
 A RankIC of 1% is an ordinary magnitude for a real factor, so the size of the effect
@@ -110,7 +110,7 @@ portfolio construction, no UI. It judges one factor's IC series and keeps the bo
 ## Status
 
 0.1.0. Statistics, identity, ledger and the MCP surface are implemented and tested
-(91 tests). The akshare adapter, the OOS test lock and the full perturbation protocol
+(95 tests). The akshare adapter, the OOS test lock and the full perturbation protocol
 are v0.2.
 
 ## License

@@ -14,8 +14,8 @@ $ python demos/noise_200.py
   t (iid / NW)    3.03 / 3.27
   p_single        0.00273   <- 看起来可以发表
   family          200 trials
-  bar_q95         3.73      <- 真因子需要的门槛
-  p_family        0.351     <- 是运气
+  bar_q95         3.66      <- 真因子需要的门槛
+  p_family        0.339     <- 是运气
   verdict         REJECT
 ```
 
@@ -91,7 +91,7 @@ DeepSeek Harness，在 `$DSH_HOME/profiles/<name>/cordis.patch.yml` 加一段：
 
 ## 状态
 
-0.1.0。统计内核、身份判定、账本、MCP 接口已实现并通过测试（91 条）。akshare 适配器、OOS 测试锁、完整扰动协议在 v0.2。
+0.1.0。统计内核、身份判定、账本、MCP 接口已实现并通过测试（95 条）。akshare 适配器、OOS 测试锁、完整扰动协议在 v0.2。
 
 ## 许可
 

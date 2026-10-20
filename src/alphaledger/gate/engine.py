@@ -79,12 +79,19 @@ def decide(
     bar_q95: float,
     alpha: float = 0.05,
     leak_flag: str | None = None,
-    orientation: int = 1,
+    direction: int = 1,
     expected_direction: int | None = None,
     ic_std: float = float("nan"),
     confidence: str = "high",
 ) -> dict:
-    """Map the numbers to a verdict and a machine-readable reason."""
+    """Map the numbers to a verdict and a machine-readable reason.
+
+    ``direction`` is the sign of the observed IC — the economic direction. It is
+    *not* the fingerprint's orientation bit, which records which of the two sign
+    conventions a factor's hash happened to land on and carries no economic
+    meaning. Conflating the two made ``expected_direction`` reject half of all
+    correctly-signed factors at random.
+    """
     if leak_flag:
         return {
             "verdict": LEAK,
@@ -103,11 +110,11 @@ def decide(
             "reason_code": "no_null_distribution",
             "detail": "could not build a selection threshold",
         }
-    if expected_direction is not None and orientation != expected_direction:
+    if expected_direction is not None and direction != expected_direction:
         return {
             "verdict": REJECT,
             "reason_code": "direction_mismatch",
-            "detail": f"factor orients {orientation:+d}, expected {expected_direction:+d}",
+            "detail": f"IC is {direction:+d}-signed, expected {expected_direction:+d}",
         }
 
     if p_family <= alpha:

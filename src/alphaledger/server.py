@@ -39,6 +39,8 @@ draw from a lottery, and the ledger remembers how many draws have been taken.
 
 1. Never compute IC yourself and present it as evidence — call `evaluate`.
 2. `fingerprint` does not consume a trial; use it before writing new factor code.
+   It takes the same `forward` panel as `evaluate`, because identity is scoped to a
+   panel: the same factor on a different universe is a different trial.
 3. Re-running `evaluate` on the same factor does NOT add a trial. It increments
    `n_evals` and shows up in `ledger_stats`. Re-evaluation is not confirmation.
 4. A PASS requires p_family <= alpha. p_single is reported but is never evidence.
@@ -75,13 +77,21 @@ TOOLS: list[dict[str, Any]] = [
             "type": "object",
             "properties": {
                 "factor": _PANEL_SCHEMA,
+                "forward": {
+                    **_PANEL_SCHEMA,
+                    "description": (
+                        "The return panel this factor would be tested on. Required because "
+                        "identity is scoped to a panel: the same factor tested on a different "
+                        "universe is a different trial, not a repeat."
+                    ),
+                },
                 "horizon": {"type": "integer", "minimum": 1, "default": 5},
                 "expr": {
                     "type": "string",
                     "description": "Optional factor expression, for diagnostics only.",
                 },
             },
-            "required": ["factor"],
+            "required": ["factor", "forward"],
         },
     },
     {
@@ -177,15 +187,33 @@ def _err(code: str, message: str, hint: str = "", **extra: Any) -> dict[str, Any
 
 
 def _tool_fingerprint(args: dict[str, Any], ledger: Ledger) -> dict[str, Any]:
+    """Identity has to be computed against the same panel `evaluate` would use.
+
+    Hashing the factor itself as if it were the panel was the first version of this
+    function, and it made `fingerprint` and `evaluate` disagree on every input — the
+    tool would answer "never seen" for a factor evaluated one call earlier. The
+    panel is part of the key, so the panel must be supplied.
+    """
     panel = load_panel(args.get("factor"), where="factor")
+    forward = load_panel(args.get("forward"), where="forward")
+    if panel.values.shape != forward.values.shape:
+        return _err(
+            "PANEL_SHAPE_MISMATCH",
+            f"factor {panel.values.shape} vs forward {forward.values.shape}",
+            "identity is scoped to a panel; both must be (dates x names) and aligned",
+            resolved_factor=panel.resolved_path,
+            resolved_forward=forward.resolved_path,
+        )
+
     horizon = int(args.get("horizon", 5))
-    forward_proxy = panel.values  # identity is scoped to the panel; reuse the factor itself
-    fp, orientation, _ = value_fingerprint(panel.values, panel_fingerprint(forward_proxy))
+    panel_fp = panel_fingerprint(forward.values)
+    fp, orientation, _ = value_fingerprint(panel.values, panel_fp, min_stocks=30)
+    panel_id = ledger.upsert_panel(panel_fp)
 
     row = ledger.conn.execute(
-        "SELECT id, panel_id, horizon, n_evals FROM trial WHERE fp = ? AND horizon = ? "
-        "ORDER BY id LIMIT 1",
-        (fp, horizon),
+        "SELECT id, panel_id, horizon, n_evals FROM trial "
+        "WHERE fp = ? AND panel_id = ? AND horizon = ? ORDER BY id LIMIT 1",
+        (fp, panel_id, horizon),
     ).fetchone()
 
     return _text(
@@ -245,7 +273,9 @@ def _tool_gate(args: dict[str, Any], ledger: Ledger) -> dict[str, Any]:
     from alphaledger.gate.engine import decide  # local import: keeps the module optional
     from alphaledger.stats.maxstat import estimate_bar
 
-    est = estimate_bar(family, alpha=alpha)
+    ev = ledger.latest_eval(row["id"])
+    t_this = abs(float(ev["t_iid"])) if ev and ev["t_iid"] is not None else None
+    est = estimate_bar(family, alpha=alpha, t_obs=t_this)
     ev = ledger.latest_eval(row["id"])
     gate = decide(
         n_dates=int(est["n_dates"]),
@@ -254,6 +284,7 @@ def _tool_gate(args: dict[str, Any], ledger: Ledger) -> dict[str, Any]:
         bar_q95=float(est["bar_q95"]),
         alpha=alpha,
         leak_flag=ev["leak_flag"] if ev else None,
+        direction=1 if ev and (ev["ic_mean"] or 0) >= 0 else -1,
         ic_std=float(ev["ic_std"]) if ev and ev["ic_std"] is not None else float("nan"),
     )
     gate.update({"fp": fp, "n_family": int(est["n_trials"]), "alpha": alpha})
@@ -386,9 +417,15 @@ def serve(ledger_path: str | None = None) -> int:
 
             try:
                 response = handle(request, ledger)
-            except Exception:  # noqa: BLE001 - never die mid-session
+            except Exception as exc:  # noqa: BLE001 - never die mid-session
                 traceback.print_exc(file=sys.stderr)
-                continue
+                # Silence is worse than an error: a client waiting for a reply to
+                # id=7 will block until its own timeout. Always answer.
+                response = {
+                    "jsonrpc": "2.0",
+                    "id": request.get("id"),
+                    "error": {"code": -32603, "message": f"internal error: {type(exc).__name__}: {exc}"},
+                }
             if response is not None:
                 sys.stdout.write(json.dumps(response, ensure_ascii=False) + "\n")
                 sys.stdout.flush()

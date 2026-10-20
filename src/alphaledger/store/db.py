@@ -14,8 +14,10 @@ forward-only, and it copies the file aside before touching an older database.
 
 from __future__ import annotations
 
+import random
 import shutil
 import sqlite3
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -39,9 +41,36 @@ def _schema_sql() -> str:
     return (Path(__file__).with_name("schema.sql")).read_text(encoding="utf-8")
 
 
-def connect(path: str | Path) -> sqlite3.Connection:
-    """Open (and migrate) a ledger. Safe to call concurrently."""
-    db_path = Path(path)
+_TRANSIENT = ("database is locked", "database table is locked", "readonly database", "unable to open")
+
+
+def _is_transient(exc: sqlite3.OperationalError) -> bool:
+    return any(tag in str(exc).lower() for tag in _TRANSIENT)
+
+
+def connect(path: str | Path, attempts: int = 8) -> sqlite3.Connection:
+    """Open (and migrate) a ledger. Safe to call concurrently.
+
+    The whole open sequence is retried, not just the writes. On Windows a file that
+    has just been created can be briefly unavailable (indexer, antivirus, another
+    process checkpointing), and the failure surfaces as ``SQLITE_READONLY`` during
+    ``PRAGMA`` rather than as a lock error. An agent will not retry for us, so the
+    library has to.
+    """
+    last: sqlite3.OperationalError | None = None
+    for attempt in range(attempts):
+        try:
+            return _connect_once(Path(path))
+        except sqlite3.OperationalError as exc:
+            if not _is_transient(exc) or attempt == attempts - 1:
+                raise
+            last = exc
+            time.sleep(0.02 * (2**attempt) + random.random() * 0.02)
+    raise last if last else RuntimeError("unreachable")
+
+
+def _connect_once(db_path: Path) -> sqlite3.Connection:
+    """One attempt at opening and migrating."""
     db_path.parent.mkdir(parents=True, exist_ok=True)
 
     conn = sqlite3.connect(str(db_path), timeout=5.0, isolation_level=None)
@@ -58,17 +87,23 @@ def connect(path: str | Path) -> sqlite3.Connection:
     if current != desired:
         conn.execute(f"PRAGMA journal_mode={desired}")
 
-    version = int(conn.execute("PRAGMA user_version").fetchone()[0])
-    if version > SCHEMA_VERSION:
-        raise RuntimeError(
-            f"ledger schema v{version} is newer than this build (v{SCHEMA_VERSION}); upgrade alphaledger"
-        )
-    if version < SCHEMA_VERSION:
-        if version > 0 and db_path.exists():
-            backup = db_path.with_suffix(db_path.suffix + f".v{version}.bak")
-            shutil.copy2(db_path, backup)
-        with conn:
-            conn.executescript(_schema_sql())
-            conn.execute(f"PRAGMA user_version={SCHEMA_VERSION}")
+    try:
+        version = int(conn.execute("PRAGMA user_version").fetchone()[0])
+        if version > SCHEMA_VERSION:
+            raise RuntimeError(
+                f"ledger schema v{version} is newer than this build (v{SCHEMA_VERSION}); "
+                "upgrade alphaledger"
+            )
+        if version < SCHEMA_VERSION:
+            if version > 0 and db_path.exists():
+                backup = db_path.with_suffix(db_path.suffix + f".v{version}.bak")
+                shutil.copy2(db_path, backup)
+            with conn:
+                conn.executescript(_schema_sql())
+                conn.execute(f"PRAGMA user_version={SCHEMA_VERSION}")
+    except Exception:
+        # Do not leak a half-open handle into the retry loop above.
+        conn.close()
+        raise
 
     return conn

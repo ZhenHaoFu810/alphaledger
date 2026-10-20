@@ -12,6 +12,8 @@ So the calibration test runs both, and a change that breaks either one fails CI.
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import numpy as np
 import pytest
 
@@ -86,7 +88,7 @@ def test_leak_outranks_significance():
 
 def test_direction_mismatch_rejects_even_when_significant():
     verdict = decide(
-        n_dates=250, t_obs=9.0, p_family=0.0001, bar_q95=3.6, orientation=-1, expected_direction=1
+        n_dates=250, t_obs=9.0, p_family=0.0001, bar_q95=3.6, direction=-1, expected_direction=1
     )
     assert verdict["verdict"] == "REJECT"
     assert verdict["reason_code"] == "direction_mismatch"
@@ -116,3 +118,52 @@ def test_benjamini_hochberg_is_monotone_and_bounded():
     assert all(q[i] <= q[i + 1] + 1e-12 for i in range(len(q) - 1))
     assert max(q) <= 1.0
     assert q[0] == pytest.approx(0.008)
+
+
+def test_p_family_belongs_to_the_trial_not_to_the_family_maximum():
+    """A weak trial in a family containing a strong one must not inherit its p-value.
+
+    This was a real bug: `evaluate` used to pass the family maximum as the observed
+    statistic, so one genuine discovery made every later noise factor "significant".
+    """
+    ics = _family_ics(50, T=250, N=200, seed=321, signal_ic=0.10)
+
+    weak_t = 0.4
+    est = max_stat_null(ics, n_boot=400, alpha=0.05, rng=np.random.default_rng(1), t_obs=weak_t)
+    assert est["t_obs"] == pytest.approx(weak_t)
+    assert est["p_family"] > 0.5, "a t of 0.4 must never look family-significant"
+
+    best = max_stat_null(ics, n_boot=400, alpha=0.05, rng=np.random.default_rng(1))
+    assert best["t_obs"] > weak_t, "the default remains the family maximum, for leaderboards"
+
+
+def test_a_strong_member_does_not_lift_a_weak_one_through_the_gate():
+    """End to end through run_evaluation: the bug users would actually hit."""
+    import tempfile
+
+    from alphaledger.evaluate import run_evaluation
+    from alphaledger.store import Ledger
+
+    ledger = Ledger(Path(tempfile.mkdtemp()) / "l.db")
+    rng = np.random.default_rng(3)
+    T, N = 250, 200
+
+    rho = 2 * np.sin(np.pi * 0.15 / 6)
+    strong = rng.standard_normal((T, N))
+    forward = np.sqrt(1 - rho**2) * rng.standard_normal((T, N)) + rho * strong
+    first = run_evaluation(strong, forward, ledger=ledger, horizon=5, with_gate=True)
+    assert first.gate["verdict"] == "PASS"
+
+    noise = rng.standard_normal((T, N))
+    second = run_evaluation(noise, forward, ledger=ledger, horizon=5, with_gate=True)
+    assert second.stats["t_iid"] < 2.0
+    assert second.gate["verdict"] == "REJECT", (
+        "a noise factor must be judged on its own t, not on the family's best"
+    )
+    ledger.close()
+
+
+def test_expected_direction_follows_the_ic_sign_not_the_fingerprint_bit():
+    base = dict(n_dates=250, t_obs=9.0, p_family=0.0001, bar_q95=3.6)
+    assert decide(**base, direction=-1, expected_direction=1)["verdict"] == "REJECT"
+    assert decide(**base, direction=1, expected_direction=1)["verdict"] == "PASS"

@@ -94,16 +94,33 @@ def test_ledger_stats_on_an_empty_ledger(client):
 
 
 def test_fingerprint_does_not_consume_a_trial(client):
-    payload = {
-        "factor": {"values": [[1.0, 2.0, 3.0], [3.0, 1.0, 2.0]]},
-        "horizon": 5,
-    }
+    factor = _grid(70, 40, 1)
+    forward = _grid(70, 40, 2)
+    payload = {"factor": {"values": factor}, "forward": {"values": forward}, "horizon": 5}
     is_err, first = client.call("fingerprint", payload)
-    assert not is_err and first["seen_before"] is False
+    assert not is_err, first
+    assert first["seen_before"] is False
     _err, second = client.call("fingerprint", payload)
     assert second["fp"] == first["fp"]
     _err, stats = client.call("ledger_stats", {})
     assert stats["totals"]["trials"] == 0, "fingerprinting must not create a trial"
+
+
+def test_fingerprint_agrees_with_evaluate(client):
+    """The whole workflow depends on these two returning the same id.
+
+    They did not: `fingerprint` hashed the factor as if it were the panel, so the
+    answer was 'never seen' for a factor evaluated one call earlier.
+    """
+    factor = _grid(70, 40, 5)
+    forward = _grid(70, 40, 6)
+    _err, fp = client.call("fingerprint", {"factor": {"values": factor}, "forward": {"values": forward}})
+    _err, ev = client.call("evaluate", {"factor": {"values": factor}, "forward": {"values": forward}})
+    assert fp["fp"] == ev["fp"]
+
+    _err, again = client.call("fingerprint", {"factor": {"values": factor}, "forward": {"values": forward}})
+    assert again["seen_before"] is True
+    assert again["trial_index"] == ev["trial_index"]
 
 
 def _grid(rows: int, cols: int, seed: int) -> list[list[float]]:

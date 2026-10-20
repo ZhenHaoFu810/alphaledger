@@ -8,6 +8,7 @@ anti-conservative, and nothing in the output will look wrong.
 
 from __future__ import annotations
 
+import contextlib
 import json
 import random
 import sqlite3
@@ -27,7 +28,7 @@ T = TypeVar("T")
 _TRANSIENT = ("database is locked", "database table is locked", "readonly database")
 
 
-def _with_retry(fn: Callable[[], T], attempts: int = 12) -> T:
+def _with_retry(fn: Callable[[], T], attempts: int = 12, on_retry: Callable[[], None] | None = None) -> T:
     """Retry transient lock failures that concurrent agents actually produce.
 
     ``busy_timeout`` covers ordinary contention inside SQLite, but a writer that
@@ -43,6 +44,8 @@ def _with_retry(fn: Callable[[], T], attempts: int = 12) -> T:
             message = str(exc).lower()
             if attempt == attempts - 1 or not any(tag in message for tag in _TRANSIENT):
                 raise
+            if on_retry is not None:
+                on_retry()
             time.sleep(0.02 * (2 ** attempt) + random.random() * 0.02)
     raise RuntimeError("unreachable")
 
@@ -56,6 +59,28 @@ class Ledger:
 
     def close(self) -> None:
         self.conn.close()
+
+    def _reconnect(self) -> None:
+        """Throw the connection away and open a new one.
+
+        Retrying on a poisoned connection is pointless: once SQLite reports
+        ``attempt to write a readonly database`` the handle will report it for every
+        subsequent statement in that process. Reconnecting is what actually clears
+        the condition.
+        """
+        with contextlib.suppress(sqlite3.Error):
+            self.conn.close()
+        self.conn = connect(self.path)
+
+    def _retry(self, fn: Callable[[], T]) -> T:
+        return _with_retry(fn, on_retry=self._reconnect)
+
+    def _execute_write(self, sql: str, params: tuple) -> sqlite3.Cursor:
+        def run():
+            with self.conn:
+                return self.conn.execute(sql, params)
+
+        return self._retry(run)
 
     def __enter__(self) -> Ledger:
         return self
@@ -74,8 +99,7 @@ class Ledger:
         n_dates: int | None = None,
         n_symbols: int | None = None,
     ) -> int:
-        with self.conn:
-            self.conn.execute(
+        self._execute_write(
                 """INSERT INTO panel (panel_fp, start_date, end_date, n_dates, n_symbols, created_at)
                    VALUES (?, ?, ?, ?, ?, ?)
                    ON CONFLICT(panel_fp) DO UPDATE SET
@@ -84,8 +108,8 @@ class Ledger:
                      n_dates    = COALESCE(panel.n_dates,    excluded.n_dates),
                      n_symbols  = COALESCE(panel.n_symbols,  excluded.n_symbols)""",
                 (panel_fp, start_date, end_date, n_dates, n_symbols, now()),
-            )
-            row = self.conn.execute("SELECT id FROM panel WHERE panel_fp = ?", (panel_fp,)).fetchone()
+        )
+        row = self.conn.execute("SELECT id FROM panel WHERE panel_fp = ?", (panel_fp,)).fetchone()
         return int(row["id"])
 
     # ------------------------------------------------------------------ trials
@@ -102,7 +126,7 @@ class Ledger:
         expr_text: str | None = None,
         family_tag: str | None = None,
     ) -> tuple[int, int, bool]:
-        return _with_retry(
+        return self._retry(
             lambda: self._upsert_trial_once(
                 fp,
                 panel_id,
@@ -203,18 +227,21 @@ class Ledger:
         }
         cols = ", ".join(payload)
         marks = ", ".join("?" for _ in payload)
-        with self.conn:
-            cur = self.conn.execute(
-                f"INSERT INTO trial_eval ({cols}) VALUES ({marks})", tuple(payload.values())
-            )
-            eval_id = int(cur.lastrowid or 0)
-            if ic is not None:
-                arr = np.asarray(ic, dtype=np.float32)
-                self.conn.execute(
-                    "INSERT INTO ic_series (eval_id, n, values_blob) VALUES (?, ?, ?)",
-                    (eval_id, arr.size, arr.tobytes()),
+        def run() -> int:
+            with self.conn:
+                cur = self.conn.execute(
+                    f"INSERT INTO trial_eval ({cols}) VALUES ({marks})", tuple(payload.values())
                 )
-        return eval_id
+                eval_id = int(cur.lastrowid or 0)
+                if ic is not None:
+                    arr = np.asarray(ic, dtype=np.float32)
+                    self.conn.execute(
+                        "INSERT INTO ic_series (eval_id, n, values_blob) VALUES (?, ?, ?)",
+                        (eval_id, arr.size, arr.tobytes()),
+                    )
+                return eval_id
+
+        return self._retry(run)
 
     def latest_eval(self, trial_id: int) -> sqlite3.Row | None:
         return self.conn.execute(
@@ -257,11 +284,10 @@ class Ledger:
     # --------------------------------------------------------------- events
 
     def log_event(self, kind: str, trial_id: int | None = None, detail: dict | None = None) -> None:
-        with self.conn:
-            self.conn.execute(
-                "INSERT INTO event (ts, kind, trial_id, detail) VALUES (?, ?, ?, ?)",
-                (now(), kind, trial_id, json.dumps(detail or {}, ensure_ascii=False)),
-            )
+        self._execute_write(
+            "INSERT INTO event (ts, kind, trial_id, detail) VALUES (?, ?, ?, ?)",
+            (now(), kind, trial_id, json.dumps(detail or {}, ensure_ascii=False)),
+        )
 
     def events(self, limit: int = 100) -> list[sqlite3.Row]:
         return list(
@@ -291,8 +317,5 @@ class Ledger:
         }
         cols = ", ".join(payload)
         marks = ", ".join("?" for _ in payload)
-        with self.conn:
-            cur = self.conn.execute(
-                f"INSERT INTO gate_run ({cols}) VALUES ({marks})", tuple(payload.values())
-            )
+        cur = self._execute_write(f"INSERT INTO gate_run ({cols}) VALUES ({marks})", tuple(payload.values()))
         return int(cur.lastrowid or 0)

@@ -90,7 +90,16 @@ def _cmd_demo(name: str) -> int:
     demos_dir = Path(__file__).resolve().parents[2] / "demos"
     script = demos_dir / f"{name}.py"
     if not script.exists():
-        print(f"no such demo: {name} (have: {[p.stem for p in demos_dir.glob('*.py')]})", file=sys.stderr)
+        available = sorted(p.stem for p in demos_dir.glob("*.py")) if demos_dir.exists() else []
+        print(
+            f"demo {name!r} is not available here.\n"
+            f"  looked in: {demos_dir}\n"
+            "  demos ship with the source checkout, not with the installed wheel;"
+            " run `python demos/<name>.py` from a clone.",
+            file=sys.stderr,
+        )
+        if available:
+            print(f"  available: {', '.join(available)}", file=sys.stderr)
         return 2
     import runpy
 

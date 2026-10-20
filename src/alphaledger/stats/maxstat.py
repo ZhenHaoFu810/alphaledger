@@ -71,6 +71,7 @@ def max_stat_null(
     alpha: float = 0.05,
     rng: np.random.Generator | None = None,
     max_seconds: float = 8.0,
+    t_obs: float | None = None,
 ) -> dict[str, float | int]:
     """Null distribution of ``max |t|`` across the family.
 
@@ -81,6 +82,10 @@ def max_stat_null(
         alpha: family-wise level; the threshold is the ``1 - alpha`` quantile.
         max_seconds: time budget, so a slow machine degrades to fewer replicates
             instead of a tool-call timeout.
+        t_obs: the statistic to test. Defaults to the family maximum, which is
+            right for a leaderboard but wrong for judging one member: a family
+            containing one very strong trial would otherwise hand its p-value to
+            every weak trial added afterwards.
 
     Returns:
         ``bar_sigma`` (mean of the null max, in sigma units), ``bar_q95`` (the
@@ -113,8 +118,9 @@ def max_stat_null(
     mean = ic.mean(axis=0)
     sd = ic.std(axis=0, ddof=1)
     sd = np.where(sd > 1e-12, sd, np.nan)
-    t_observed = np.abs(mean / (sd / math.sqrt(n_dates)))
-    t_obs = float(np.nanmax(t_observed)) if np.isfinite(t_observed).any() else float("nan")
+    t_per_trial = np.abs(mean / (sd / math.sqrt(n_dates)))
+    if t_obs is None:
+        t_obs = float(np.nanmax(t_per_trial)) if np.isfinite(t_per_trial).any() else float("nan")
 
     counts = bootstrap_counts(n_dates, block, n_boot, rng)
     t_boot = _column_t(ic, counts)
@@ -143,37 +149,28 @@ def estimate_bar(
     target_rel_se: float = 0.005,
     max_boot: int = 4000,
     rng: np.random.Generator | None = None,
+    t_obs: float | None = None,
 ) -> dict[str, float | int]:
     """Grow the bootstrap until the threshold's standard error is small enough.
 
-    The quantile is what we act on, so its precision is what we bound — not the
-    mean's. Stops at whichever comes first: the target relative standard error, the
-    replicate ceiling, or two consecutive doublings that fail to improve.
+    The quantile is what we act on, so it is what must be stable. Two independent
+    runs at the same replicate count differ only by Monte Carlo noise, so we keep
+    doubling until two successive estimates agree to a relative tolerance, or the
+    ceiling is hit. (An earlier version estimated a density for the quantile from a
+    made-up spread, which looked like a convergence criterion and was not one.)
     """
     rng = rng or np.random.default_rng()
     n_boot = 500
-    best = max_stat_null(ic, n_boot=n_boot, alpha=alpha, rng=rng)
-    while n_boot < max_boot:
-        prev = best
+    best: dict[str, float | int] = {}
+    previous_q = None
+    while True:
+        best = max_stat_null(ic, n_boot=n_boot, alpha=alpha, rng=rng, t_obs=t_obs)
+        q = float(best["bar_q95"])
+        if previous_q is not None and abs(q - previous_q) / max(q, 1e-9) < target_rel_se:
+            break
+        if n_boot >= max_boot:
+            break
+        previous_q = q
         n_boot = min(n_boot * 2, max_boot)
-        best = max_stat_null(ic, n_boot=n_boot, alpha=alpha, rng=rng)
-        se = _quantile_se(ic, best["bar_q95"], alpha, n_boot)
-        if se / max(best["bar_q95"], 1e-9) < target_rel_se:
-            break
-        if abs(best["bar_q95"] - prev["bar_q95"]) < 1e-3:
-            break
     best["n_boot"] = n_boot
     return best
-
-
-def _quantile_se(ic: np.ndarray, q: float, alpha: float, n_boot: int) -> float:
-    """Rough standard error of the quantile, from the normal approximation.
-
-    ``SE(q_p) = sqrt(p(1-p)/n) / f(q_p)``; the density is estimated with a small
-    Gaussian kernel around the quantile using a cheap subsample.
-    """
-    p = 1.0 - alpha
-    # Density-free approximation: use the spread of the central 90% as a scale proxy.
-    spread = max(q, 1e-9) * 0.35
-    density = 1.0 / (spread * math.sqrt(2 * math.pi))
-    return math.sqrt(p * (1 - p) / n_boot) / max(density, 1e-12)

@@ -110,7 +110,7 @@ volatility clustering and fat tails, without modelling any of it.
 |---|---|---|
 | 1 | `RankIC ≡ 1` on every usable date | `LABEL_CONTAMINATION` |
 | 2 | `T < 60` | `INSUFFICIENT_DATA` |
-| 3 | `expected_direction` set and orientation differs | `REJECT` |
+| 3 | `expected_direction` set and the IC's sign differs | `REJECT` |
 | 4 | `p_family <= α` | `PASS` |
 | 5 | otherwise | `REJECT` |
 
@@ -121,6 +121,11 @@ Family-wise error control, not FDR. The decision unit is a single factor, so the
 no set of discoveries to take a false-discovery proportion of; and an append-only
 ledger never has a closed rejection set, which is what Benjamini-Hochberg requires.
 BH q-values are still reported for context.
+
+`direction` is the sign of `ic_mean`. It is not the fingerprint's `orientation`, which
+is a bit recording which of the two sign conventions a hash landed on and has no
+economic meaning — comparing that bit to an expectation rejected correctly-signed
+factors about half the time.
 
 - Implementation: `gate/engine.py:decide`, `:cross_family_alpha`, `:required_ic_mean`
 - Tests: `tests/test_gate.py::test_leak_outranks_significance`,

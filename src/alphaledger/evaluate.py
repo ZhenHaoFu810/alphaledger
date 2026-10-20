@@ -190,7 +190,7 @@ def run_evaluation(
         from alphaledger.gate.engine import decide  # local import keeps gate optional
 
         gate = decide(n_dates=n_dates, t_obs=float("nan"), p_family=float("nan"),
-                      bar_q95=float("nan"), alpha=alpha, leak_flag=leak, orientation=orientation)
+                      bar_q95=float("nan"), alpha=alpha, leak_flag=leak, direction=1)
         gate.update({"n_family": n_family, "alpha": alpha, "p_family": float("nan"),
                      "bar_q95": float("nan"), "bar_sigma": float("nan"),
                      "method": "identity_check"})
@@ -198,12 +198,19 @@ def run_evaluation(
         if with_gate:
             _, family = ledger.family_ic_series(panel_id, horizon)
             if family is not None and family.size:
+                # Judge *this* trial against the family's null distribution of the
+                # maximum. Passing the family maximum here would let one strong
+                # factor carry every later weak one through the gate.
                 est: dict[str, Any] = estimate_bar(
-                    family, alpha=alpha, rng=rng, max_boot=max(1000, n_boot)
+                    family,
+                    alpha=alpha,
+                    rng=rng,
+                    max_boot=max(1000, n_boot),
+                    t_obs=abs(float(stats["t_iid"])),
                 )
             else:
                 est = {"bar_q95": float("nan"), "bar_sigma": float("nan"),
-                       "p_family": float("nan"), "t_obs": float(stats["t_iid"]),
+                       "p_family": float("nan"), "t_obs": abs(float(stats["t_iid"])),
                        "n_boot": 0, "block": 0, "n_trials": n_family,
                        "n_dates": n_dates, "confidence": "low"}
             from alphaledger.gate.engine import decide  # local import keeps gate optional
@@ -215,7 +222,7 @@ def run_evaluation(
                 bar_q95=float(est.get("bar_q95", float("nan"))),
                 alpha=alpha,
                 leak_flag=leak,
-                orientation=orientation,
+                direction=1 if stats["ic_mean"] >= 0 else -1,
                 expected_direction=expected_direction,
                 ic_std=stats["ic_std"],
                 confidence=str(est.get("confidence", "high")),

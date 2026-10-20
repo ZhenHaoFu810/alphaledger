@@ -10,8 +10,13 @@ below are the ones the model actually sees.
 > code to avoid re-testing something already counted.
 
 ```json
-{"factor": {"path": "f.npz", "key": "factor"}, "horizon": 5, "expr": "rank(close/delay(close,20))"}
+{"factor": {"path": "f.npz", "key": "factor"}, "forward": {"path": "r.npz"},
+ "horizon": 5, "expr": "rank(close/delay(close,20))"}
 ```
+
+`forward` is required: identity is scoped to the panel, so the same factor tested on a
+different universe is a different trial. (An earlier build hashed the factor as if it
+were the panel, which made this tool disagree with `evaluate` on every input.)
 
 ```json
 {"fp": "v1:400df0a53…", "orientation": 1, "seen_before": true, "trial_index": 12,
@@ -54,6 +59,10 @@ below are the ones the model actually sees.
 Returns the same `gate` object plus `required_ic_mean` on a rejection: the IC the
 factor would have needed, which is also the honest way to report how strong an edge
 this study could have detected at all.
+
+`p_family` is computed for *this* trial's |t| against the family's null distribution
+of the maximum. It is not the family's own p-value: a family containing one very
+strong factor must not make every later weak trial look significant.
 
 ## `ledger_stats`
 
