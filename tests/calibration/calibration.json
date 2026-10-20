@@ -1,0 +1,53 @@
+[
+  {
+    "label": "null (FPR)",
+    "studies": 12,
+    "factors_per_study": 100,
+    "dates": 250,
+    "names": 200,
+    "signal_ic": 0.0,
+    "n_boot": 400,
+    "pass_rate": 0.083,
+    "bar_q95_median": 3.49,
+    "bar_q95_range": [
+      3.397,
+      3.599
+    ],
+    "bar_sigma_median": 2.693,
+    "seconds": 36.9
+  },
+  {
+    "label": "power @ IC=0.03",
+    "studies": 4,
+    "factors_per_study": 100,
+    "dates": 500,
+    "names": 250,
+    "signal_ic": 0.03,
+    "n_boot": 400,
+    "pass_rate": 1.0,
+    "bar_q95_median": 3.489,
+    "bar_q95_range": [
+      3.437,
+      3.614
+    ],
+    "bar_sigma_median": 2.72,
+    "seconds": 28.9
+  },
+  {
+    "label": "power @ IC=0.05",
+    "studies": 4,
+    "factors_per_study": 100,
+    "dates": 500,
+    "names": 250,
+    "signal_ic": 0.05,
+    "n_boot": 400,
+    "pass_rate": 1.0,
+    "bar_q95_median": 3.501,
+    "bar_q95_range": [
+      3.475,
+      3.53
+    ],
+    "bar_sigma_median": 2.693,
+    "seconds": 28.8
+  }
+]
