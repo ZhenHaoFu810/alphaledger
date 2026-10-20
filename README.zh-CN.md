@@ -7,6 +7,7 @@
 <p align="center"><em>因子研究的试验账本</em></p>
 
 <p align="center">
+  <img alt="ci" src="https://github.com/ZhenHaoFu810/alphaledger/actions/workflows/ci.yml/badge.svg?branch=main">
   <img alt="tests" src="https://img.shields.io/badge/tests-104%20passed-brightgreen">
   <img alt="dependencies" src="https://img.shields.io/badge/dependencies-numpy%20only-blue">
   <img alt="python" src="https://img.shields.io/badge/python-3.10%2B-blue">
@@ -156,7 +157,7 @@ claude mcp add alphaledger -- uvx alphaledger-mcp
 
 ## 状态
 
-**0.1.0，未发布。** 统计内核、身份判定、账本、MCP 接口均已实现并通过测试：104 条测试，`ruff` 与 `mypy` 干净，误报率 8.3%（12 组中 1 次），对 IC=0.03 的植入因子功效 4/4。
+**0.1.0。** 仓库已公开，PyPI 与 npm 包尚未发布。统计内核、身份判定、账本、MCP 接口均已实现并通过测试：104 条测试，`ruff` 与 `mypy` 干净，误报率 8.3%（12 组中 1 次），对 IC=0.03 的植入因子功效 4/4。
 
 v0.2：akshare 适配器、一次性 OOS 测试锁、完整前视扰动协议。
 
