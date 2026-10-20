@@ -119,7 +119,10 @@ claude mcp add alphaledger -- uvx alphaledger-mcp
 装好后工具以 `mcp__alphaledger__evaluate`、`mcp__alphaledger__gate` 的形式出现。
 
 <sub>两条路都需要先装一次 `uv`（`curl -LsSf https://astral.sh/uv/install.sh | sh`），因为 dsh 刻意不管 Python 环境。server 已发布到 PyPI；
-npm 上的插件包还没发，所以 dsh 这条现在从源码目录装：`dsh plugin --profile web add ./dsh/alphaledger`。</sub>
+npm 上的插件包还没发，所以 dsh 这条现在从源码目录装：`dsh plugin --profile web add ./dsh/alphaledger`。
+这不是退而求其次——它走的就是注册表那条同样的 `pnpm add`：已在 dsh 0.2.0-rc.2 上用隔离的 `DSH_HOME` 实测过，
+命令退 0，`dsh-alphaledger` 进 `dsh.profile.bundles`，`dsh --profile <name> --dump-config` 里能看到它的 MCP 条目。
+发 npm 只是换来 `dsh plugin add dsh-alphaledger` 这个更短的写法。</sub>
 
 > 依赖只有 numpy 和标准库。scipy 会让安装体积翻倍、冷启动多几秒，而我们需要的两件事——秩相关和 Student-t 尾概率——几十行就能写完。详见 [`docs/METHOD.md`](docs/METHOD.md)。
 

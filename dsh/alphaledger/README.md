@@ -10,7 +10,10 @@ $ dsh plugin --profile web add dsh-alphaledger
 ```
 
 <sub>The server itself is on PyPI as `alphaledger-mcp`; this bundle is not on npm yet,
-so install it from the checkout until it is: `dsh plugin --profile web add ./dsh/alphaledger`.</sub>
+so install it from the checkout until it is: `dsh plugin --profile web add ./dsh/alphaledger`.
+Verified on dsh 0.2.0-rc.2 with an isolated `DSH_HOME` — the relative spec is anchored
+to an absolute path, pnpm records it as `link:`, and the bundle is registered and loaded
+exactly as a registry install would be.</sub>
 
 That inserts one row into the profile's patch:
 
@@ -81,3 +84,10 @@ Until that runs, install from a path instead:
 ```console
 $ dsh plugin --profile web add ./dsh/alphaledger
 ```
+
+Two notes from actually running that against dsh 0.2.0-rc.2. First, dsh resolves the
+relative spec against the invoking directory, so the recorded dependency is an absolute
+`link:` — the checkout has to stay where it is for as long as the plugin is installed.
+Second, the install did no network work at all: the profile manifest lists bundle names
+under `dsh.profile.bundles`, not as dependencies, so `pnpm add` had nothing to fetch
+and finished in under a second.

@@ -122,7 +122,11 @@ Tools appear as `mcp__alphaledger__evaluate`, `mcp__alphaledger__gate`, and so o
 <sub>Both routes need `uv` once (`curl -LsSf https://astral.sh/uv/install.sh | sh`),
 because dsh deliberately does not manage Python environments. The server is on PyPI;
 the npm bundle is not published yet, so for now the dsh route installs from the
-checkout: `dsh plugin --profile web add ./dsh/alphaledger`.</sub>
+checkout: `dsh plugin --profile web add ./dsh/alphaledger`. That is the ordinary
+`pnpm add` path, not a fallback — it was run against dsh 0.2.0-rc.2 with an isolated
+`DSH_HOME`: the command exits 0, `dsh-alphaledger` is added to `dsh.profile.bundles`,
+and its MCP entry appears in `dsh --profile <name> --dump-config`. Publishing to npm
+would only buy the shorter spelling `dsh plugin add dsh-alphaledger`.</sub>
 
 > Dependencies are numpy and the standard library. scipy would double the install and add seconds to a cold start, and the two things we needed from it — rank correlation and Student-t tails — are a few dozen lines. See [`docs/METHOD.md`](docs/METHOD.md).
 
