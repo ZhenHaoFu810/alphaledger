@@ -1,0 +1,23 @@
+# Ledger database (project-local by default)
+.alphaledger/
+*.db
+*.db-wal
+*.db-shm
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Local data and scratch
+data/*.npz
+data/*.parquet
+scratch/
+.env

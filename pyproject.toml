@@ -1,0 +1,57 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "alphaledger-mcp"
+version = "0.1.0"
+description = "A trial ledger for factor research: every factor you evaluate is a draw from a lottery."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "Zhenhao Fu" }]
+keywords = ["quant", "factor", "multiple-testing", "mcp", "agent", "research"]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "License :: OSI Approved :: MIT License",
+  "Topic :: Office/Business :: Financial :: Investment",
+]
+# Deliberately numpy-only. scipy would double the install size and add ~2s to a
+# cold `uvx` start, and everything we need from it (rank correlations, Student-t
+# p-values) is a few dozen lines in stats/. See docs/METHOD.md.
+dependencies = ["numpy>=1.26"]
+
+[project.optional-dependencies]
+frames = ["pandas>=2.0", "pyarrow>=15"]
+akshare = ["akshare>=1.12"]
+dev = ["pytest>=8", "pytest-cov", "ruff", "mypy"]
+
+[project.scripts]
+alphaledger = "alphaledger.cli:main"
+alphaledger-mcp = "alphaledger.cli:serve"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/alphaledger"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.ruff]
+line-length = 110
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+
+[tool.ruff.lint.per-file-ignores]
+# Test data and JSON fixtures read better un-wrapped; the source stays under 100.
+"tests/*" = ["E501"]
+"demos/*" = ["E501"]
+
+[tool.mypy]
+python_version = "3.10"
+files = ["src/alphaledger"]
+strict = false
+warn_unused_ignores = true
