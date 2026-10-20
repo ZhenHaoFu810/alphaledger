@@ -7,7 +7,7 @@
 <p align="center"><em>因子研究的试验账本</em></p>
 
 <p align="center">
-  <img alt="tests" src="https://img.shields.io/badge/tests-95%20passed-brightgreen">
+  <img alt="tests" src="https://img.shields.io/badge/tests-103%20passed-brightgreen">
   <img alt="dependencies" src="https://img.shields.io/badge/dependencies-numpy%20only-blue">
   <img alt="python" src="https://img.shields.io/badge/python-3.10%2B-blue">
   <img alt="license" src="https://img.shields.io/badge/license-MIT-green">
@@ -86,23 +86,15 @@ flowchart LR
 
 ## 安装
 
-alphaledger 是一个 MCP server，任何支持该协议的客户端都能拉起它；不联网，不需要 API key，数据不出本机。
+alphaledger 是一个 MCP server，外面套一层四文件的 dsh 插件。一份实现，两条入口；不联网，不需要 API key，数据不出本机。
+
+**DeepSeek Harness** —— 一条命令：
 
 ```console
-$ uvx alphaledger-mcp
+$ dsh plugin --profile web add dsh-alphaledger
 ```
 
-<sub>0.1.0 还没有发布到 PyPI。在此之前直接装轮子
-（`uv pip install dist/alphaledger_mcp-0.1.0-py3-none-any.whl`），或从源码目录启动。
-发布之后下面的命令原样可用。</sub>
-
-**Claude Code**
-
-```bash
-claude mcp add alphaledger -- uvx alphaledger-mcp
-```
-
-**DeepSeek Harness** —— 在 `$DSH_HOME/profiles/<name>/cordis.patch.yml` 加一段：
+插件本身没有代码，只负责写下面这段启动配置；想看懂它做了什么，就是这几行：
 
 ```yaml
 - insert:
@@ -116,7 +108,16 @@ claude mcp add alphaledger -- uvx alphaledger-mcp
         failOnStartupError: true
 ```
 
+**Claude Code、Codex、或任何 MCP 客户端：**
+
+```bash
+claude mcp add alphaledger -- uvx alphaledger-mcp
+```
+
 装好后工具以 `mcp__alphaledger__evaluate`、`mcp__alphaledger__gate` 的形式出现。
+
+<sub>两条路都需要先装一次 `uv`（`curl -LsSf https://astral.sh/uv/install.sh | sh`），因为 dsh 刻意不管 Python 环境。两个包目前都还没发布：在发布之前用
+`dsh plugin add ./dsh/alphaledger` 和 `uv pip install dist/alphaledger_mcp-0.1.0-py3-none-any.whl`。</sub>
 
 > 依赖只有 numpy 和标准库。scipy 会让安装体积翻倍、冷启动多几秒，而我们需要的两件事——秩相关和 Student-t 尾概率——几十行就能写完。详见 [`docs/METHOD.md`](docs/METHOD.md)。
 
@@ -155,7 +156,7 @@ claude mcp add alphaledger -- uvx alphaledger-mcp
 
 ## 状态
 
-**0.1.0，未发布。** 统计内核、身份判定、账本、MCP 接口均已实现并通过测试：95 条测试，`ruff` 与 `mypy` 干净，误报率 8.3%（12 组中 1 次），对 IC=0.03 的植入因子功效 4/4。
+**0.1.0，未发布。** 统计内核、身份判定、账本、MCP 接口均已实现并通过测试：103 条测试，`ruff` 与 `mypy` 干净，误报率 8.3%（12 组中 1 次），对 IC=0.03 的植入因子功效 4/4。
 
 v0.2：akshare 适配器、一次性 OOS 测试锁、完整前视扰动协议。
 

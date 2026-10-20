@@ -1,0 +1,36 @@
+{
+  "name": "dsh-alphaledger",
+  "version": "0.1.0",
+  "description": "A trial ledger for factor research — counts how many factors you have tried, and refuses to judge one without that number.",
+  "type": "module",
+  "private": false,
+  "exports": {
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg"
+  },
+  "files": [
+    "cordis.patch.yml",
+    "locale/*.json",
+    "icon.svg"
+  ],
+  "keywords": [
+    "dsh-plugin",
+    "deepseek-harness",
+    "quant",
+    "factor",
+    "multiple-testing"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "engines": {
+    "dsh": ">=0.2.0"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/<owner>/alphaledger"
+  }
+}

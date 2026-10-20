@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "alphaledger",
+    "description": "A trial ledger for factor research. Counts how many factors have been tried on this panel and refuses to call one significant without that number."
+  }
+}

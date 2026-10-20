@@ -1,0 +1,19 @@
+# alphaledger as a dsh plugin.
+#
+# dsh does not install Python, so the command is `uvx`: it creates the environment,
+# fetches alphaledger-mcp from PyPI and runs it. The only requirement on the user's
+# machine is uv itself (a single binary, https://docs.astral.sh/uv/).
+#
+# `failOnStartupError: true` is deliberate. With it false, a missing `uv` or an
+# unreachable PyPI makes the tools vanish silently and the user sees only "the model
+# ignored me"; with it true, the plugin refuses to activate and says why.
+- insert:
+    - id: alphaledger
+      name: '@deepseek-ai/dsh-mcp-client'
+      config:
+        serverName: alphaledger
+        transport: stdio
+        command: uvx
+        args: ['alphaledger-mcp']
+        failOnStartupError: true
+        toolCallTimeoutMs: 120000

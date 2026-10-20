@@ -98,7 +98,14 @@ method, `-32602` bad params). A malformed line does not kill the server.
 
 ## Wiring it into a host
 
-Any MCP client works. For DeepSeek Harness, one patch line:
+Any MCP client works. For DeepSeek Harness there is a bundle
+(`dsh/alphaledger`, four files, no JavaScript):
+
+```console
+$ dsh plugin --profile web add dsh-alphaledger
+```
+
+which is just this patch, written for you:
 
 ```yaml
 - insert:
