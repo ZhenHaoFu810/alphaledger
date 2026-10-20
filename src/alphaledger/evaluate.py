@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass
+from typing import Any
 
 import numpy as np
 
@@ -181,7 +182,7 @@ def run_evaluation(
         kurt=stats["kurt"],
     )
 
-    gate: dict = {"verdict": "DEGENERATE" if degenerate else "INSUFFICIENT_DATA"}
+    gate: dict[str, Any] = {"verdict": "DEGENERATE" if degenerate else "INSUFFICIENT_DATA"}
     if leak:
         # Short-circuit: a contaminated factor is rejected on identity, and building a
         # null distribution for it would be both pointless and numerically degenerate
@@ -197,7 +198,9 @@ def run_evaluation(
         if with_gate:
             _, family = ledger.family_ic_series(panel_id, horizon)
             if family is not None and family.size:
-                est = estimate_bar(family, alpha=alpha, rng=rng, max_boot=max(1000, n_boot))
+                est: dict[str, Any] = estimate_bar(
+                    family, alpha=alpha, rng=rng, max_boot=max(1000, n_boot)
+                )
             else:
                 est = {"bar_q95": float("nan"), "bar_sigma": float("nan"),
                        "p_family": float("nan"), "t_obs": float(stats["t_iid"]),

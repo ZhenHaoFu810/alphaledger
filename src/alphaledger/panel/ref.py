@@ -123,7 +123,7 @@ def load_panel(ref: Any, *, where: str = "panel") -> ResolvedPanel:
         arr = np.genfromtxt(path, delimiter=delim, dtype=np.float64)
     elif fmt in ("parquet", "pq"):
         try:
-            import pandas as pd  # noqa: PLC0415 - optional dependency
+            import pandas as pd  # type: ignore[import-untyped]  # optional extra
         except ImportError as exc:
             raise PanelError(
                 "MISSING_EXTRA",

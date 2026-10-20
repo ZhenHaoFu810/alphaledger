@@ -163,7 +163,7 @@ class Ledger:
             "SELECT COUNT(*) AS c FROM trial WHERE panel_id = ? AND horizon = ?",
             (panel_id, horizon),
         ).fetchone()
-        return int(row["c"])
+        return int(row["c"] or 0)
 
     def trial_ordinal(self, trial_id: int, panel_id: int, horizon: int) -> int:
         """1-based position of this trial within its family, by insertion order.
@@ -176,7 +176,7 @@ class Ledger:
             "SELECT COUNT(*) AS c FROM trial WHERE panel_id = ? AND horizon = ? AND id <= ?",
             (panel_id, horizon, trial_id),
         ).fetchone()
-        return int(row["c"])
+        return int(row["c"] or 0)
 
     # --------------------------------------------------------------- evals
 
@@ -207,7 +207,7 @@ class Ledger:
             cur = self.conn.execute(
                 f"INSERT INTO trial_eval ({cols}) VALUES ({marks})", tuple(payload.values())
             )
-            eval_id = int(cur.lastrowid)
+            eval_id = int(cur.lastrowid or 0)
             if ic is not None:
                 arr = np.asarray(ic, dtype=np.float32)
                 self.conn.execute(
@@ -295,4 +295,4 @@ class Ledger:
             cur = self.conn.execute(
                 f"INSERT INTO gate_run ({cols}) VALUES ({marks})", tuple(payload.values())
             )
-        return int(cur.lastrowid)
+        return int(cur.lastrowid or 0)

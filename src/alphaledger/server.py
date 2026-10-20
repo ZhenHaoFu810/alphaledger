@@ -339,7 +339,7 @@ def handle(request: dict[str, Any], ledger: Ledger) -> dict[str, Any] | None:
         return ok({"tools": TOOLS})
     if method == "tools/call":
         params = request.get("params") or {}
-        name = params.get("name")
+        name = str(params.get("name") or "")
         args = params.get("arguments") or {}
         fn = _DISPATCH.get(name)
         if fn is None:
