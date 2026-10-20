@@ -64,7 +64,7 @@ flowchart LR
     IC --> ST["t, p_single"]
     ID --> L[("账本")]
     L --> FAM["家族<br/>同一面板上的 N 次试验"]
-    FAM --> NUL["max |t| 零分布<br/>块 bootstrap"]
+    FAM --> NUL["max abs(t) 零分布<br/>块 bootstrap"]
     ST --> G{"p_family ≤ α ?"}
     NUL --> G
     G -->|是| P["PASS"]
@@ -91,6 +91,10 @@ alphaledger 是一个 MCP server，任何支持该协议的客户端都能拉起
 ```console
 $ uvx alphaledger-mcp
 ```
+
+<sub>0.1.0 还没有发布到 PyPI。在此之前直接装轮子
+（`uv pip install dist/alphaledger_mcp-0.1.0-py3-none-any.whl`），或从源码目录启动。
+发布之后下面的命令原样可用。</sub>
 
 **Claude Code**
 

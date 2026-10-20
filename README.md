@@ -64,7 +64,7 @@ flowchart LR
     IC --> ST["t, p_single"]
     ID --> L[("ledger")]
     L --> FAM["family<br/>N trials on this panel"]
-    FAM --> NUL["null of max |t|<br/>block bootstrap"]
+    FAM --> NUL["null of max abs(t)<br/>block bootstrap"]
     ST --> G{"p_family ≤ α ?"}
     NUL --> G
     G -->|yes| P["PASS"]
@@ -91,6 +91,10 @@ alphaledger is an MCP server. Any client that speaks the protocol can run it; no
 ```console
 $ uvx alphaledger-mcp
 ```
+
+<sub>0.1.0 is not on PyPI yet. Until it is published, install the wheel directly
+(`uv pip install dist/alphaledger_mcp-0.1.0-py3-none-any.whl`) or run the server from a
+checkout. The commands below work unchanged once the release is out.</sub>
 
 **Claude Code**
 

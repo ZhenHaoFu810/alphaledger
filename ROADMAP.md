@@ -14,13 +14,13 @@
 | A identity | 值指纹 + 表达式归一化 | 五种写法 → 1 trial / 5 evals / 1 sign_flip ✅ |
 | B store | SQLite 账本 | 8 进程 × 10 次 = 80 evals，仍为 1 trial ✅ |
 | C evaluate | 端到端 + 4 个 demo | 返回 "Trial #200 of 200 — REJECT" ✅ |
-| D maxstat/gate | 块 bootstrap + 三态 | bar_q95=3.73（理论 3.66），t_obs=3.03 ✅ |
+| D maxstat/gate | 块 bootstrap + 三态 | bar_q95=3.67（理论 3.66），t_obs=3.03 ✅ |
 | E stats/CLI | 四工具 + doctor/stats | MCP 子进程冒烟通过 ✅ |
-| F 测试校准 | 91 条测试 | FPR 8.3%（1/12），功效 4/4 ✅ |
+| F 测试校准 | 95 条测试 | FPR 8.3%（1/12），功效 4/4 ✅ |
 | G 文档 | METHOD/TOOLS/AUDIT/CALIBRATION + 双语 README | 每个公式可点到函数与测试 ✅ |
 | H 打包 | wheel + sdist | 44 KB wheel，冷启 13 s（含下载 numpy）✅ |
 
-**质量门**：`pytest` 91 passed · `ruff check` 全通过 · `mypy` 21 files 无问题 · `git log` 9 个分阶段提交、无密码无绝对路径。
+**质量门**：`pytest` 95 passed · `ruff check` 全通过 · `mypy` 21 files 无问题 · `git log` 9 个分阶段提交、无密码无绝对路径。
 
 **未做（明确越线项）**：`git push`、PyPI 发布、社媒发帖、dsh issue、npm bundle。
 
