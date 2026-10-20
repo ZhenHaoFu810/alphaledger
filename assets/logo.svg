@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128" role="img" aria-label="alphaledger">
+  <rect width="128" height="128" rx="28" fill="#0F172A"/>
+  <!-- tally marks: four strokes and a cross, the oldest counter there is -->
+  <g stroke="#E2E8F0" stroke-width="7" stroke-linecap="round">
+    <line x1="34" y1="84" x2="34" y2="46"/>
+    <line x1="50" y1="88" x2="50" y2="42"/>
+    <line x1="66" y1="84" x2="66" y2="46"/>
+    <line x1="82" y1="88" x2="82" y2="42"/>
+  </g>
+  <line x1="24" y1="88" x2="92" y2="42" stroke="#34D399" stroke-width="7" stroke-linecap="round"/>
+</svg>

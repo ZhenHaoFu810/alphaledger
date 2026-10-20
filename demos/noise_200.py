@@ -20,7 +20,8 @@ def gate_for(ledger, fp: str) -> dict:
 
     row = ledger.conn.execute("SELECT * FROM trial WHERE fp = ?", (fp,)).fetchone()
     _ids, family = ledger.family_ic_series(row["panel_id"], row["horizon"])
-    return estimate_bar(family, alpha=0.05)
+    # Seeded: the README quotes these numbers, so they must not drift.
+    return estimate_bar(family, alpha=0.05, rng=np.random.default_rng(20261020))
 
 
 def main() -> None:
@@ -36,7 +37,9 @@ def main() -> None:
         factor = rng.standard_normal((T, N))
         # with_gate=False: paying for 200 bootstraps would turn a 5 s demo into a minute
         results.append(
-            run_evaluation(factor, forward, ledger=ledger, horizon=5, label=f"noise_{i:03d}", with_gate=False)
+            run_evaluation(
+                factor, forward, ledger=ledger, horizon=5, label=f"noise_{i:03d}", with_gate=False
+            )
         )
         if (i + 1) % 50 == 0:
             print(f"  evaluated {i + 1}/{K}")
