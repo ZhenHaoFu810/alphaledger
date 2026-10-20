@@ -12,6 +12,7 @@ tools; resources, prompts and sampling are out of scope (this server has none).
 
 from __future__ import annotations
 
+import contextlib
 import json
 import math
 import sys
@@ -172,7 +173,10 @@ def _text(payload: Any, is_error: bool = False) -> dict[str, Any]:
         "content": [
             {
                 "type": "text",
-                "text": json.dumps(_jsonable(payload), ensure_ascii=False, allow_nan=False),
+                # ensure_ascii=True: the wire format must not depend on the host's
+                # console code page. On Windows a non-UTF-8 stdout encodes an em dash
+                # as 0x97, and every conforming client then fails to decode the frame.
+                "text": json.dumps(_jsonable(payload), ensure_ascii=True, allow_nan=False),
             }
         ],
         "isError": is_error,
@@ -391,8 +395,21 @@ def handle(request: dict[str, Any], ledger: Ledger) -> dict[str, Any] | None:
     return fail(-32601, f"method not found: {method}")
 
 
+def _force_utf8() -> None:
+    """Pin the protocol streams to UTF-8 regardless of the platform default.
+
+    Outbound frames are ASCII-escaped anyway; this is for the inbound direction —
+    a tool argument containing Chinese would otherwise be decoded with cp1252 and
+    arrive as mojibake — and so that stderr diagnostics stay readable.
+    """
+    for stream in (sys.stdin, sys.stdout, sys.stderr):
+        with contextlib.suppress(AttributeError, ValueError, OSError):
+            stream.reconfigure(encoding="utf-8")  # type: ignore[union-attr]
+
+
 def serve(ledger_path: str | None = None) -> int:
     """Read JSON-RPC lines from stdin, write replies to stdout. Logs to stderr."""
+    _force_utf8()
     ledger = Ledger(ledger_path)
     try:
         for line in sys.stdin:
@@ -427,7 +444,7 @@ def serve(ledger_path: str | None = None) -> int:
                     "error": {"code": -32603, "message": f"internal error: {type(exc).__name__}: {exc}"},
                 }
             if response is not None:
-                sys.stdout.write(json.dumps(response, ensure_ascii=False) + "\n")
+                sys.stdout.write(json.dumps(response, ensure_ascii=True) + "\n")
                 sys.stdout.flush()
     finally:
         ledger.close()

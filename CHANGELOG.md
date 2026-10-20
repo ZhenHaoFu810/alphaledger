@@ -22,7 +22,7 @@ First cut. Everything here is load-bearing; nothing is scaffolding.
   Benjamini-Hochberg q-values reported, not gated on.
 - **MCP server over stdio**, hand-rolled and dependency-free: `fingerprint`,
   `evaluate`, `gate`, `ledger_stats`. Strict JSON (non-finite → `null`).
-- **103 tests**, including an eight-process concurrency test and a calibration pair
+- **104 tests**, including an eight-process concurrency test and a calibration pair
   (false-positive rate and power) that must both hold.
 - Four demos: `noise_200`, `true_factor`, `leaky_momentum`, `equivalents`.
 

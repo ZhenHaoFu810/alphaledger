@@ -7,7 +7,7 @@
 <p align="center"><em>A trial ledger for factor research.</em></p>
 
 <p align="center">
-  <img alt="tests" src="https://img.shields.io/badge/tests-103%20passed-brightgreen">
+  <img alt="tests" src="https://img.shields.io/badge/tests-104%20passed-brightgreen">
   <img alt="dependencies" src="https://img.shields.io/badge/dependencies-numpy%20only-blue">
   <img alt="python" src="https://img.shields.io/badge/python-3.10%2B-blue">
   <img alt="license" src="https://img.shields.io/badge/license-MIT-green">
@@ -159,7 +159,7 @@ No data layer — you bring a panel, and an akshare adapter is planned. No backt
 
 ## Status
 
-**0.1.0, unreleased.** Statistics, identity, ledger and the MCP surface are implemented and tested: 103 tests, `ruff` and `mypy` clean, false-positive rate 8.3% (1 in 12 studies), power 4 of 4 on a planted IC of 0.03.
+**0.1.0, unreleased.** Statistics, identity, ledger and the MCP surface are implemented and tested: 104 tests, `ruff` and `mypy` clean, false-positive rate 8.3% (1 in 12 studies), power 4 of 4 on a planted IC of 0.03.
 
 v0.2: akshare adapter, one-shot OOS test lock, full look-ahead perturbation.
 

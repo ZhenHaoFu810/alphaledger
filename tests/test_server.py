@@ -19,7 +19,7 @@ SRC = str(Path(__file__).resolve().parents[1] / "src")
 
 
 class Client:
-    def __init__(self, db: Path) -> None:
+    def __init__(self, db: Path, env: dict | None = None) -> None:
         self.proc = subprocess.Popen(
             [sys.executable, "-c", f"import sys; sys.path.insert(0, {SRC!r});"
              f"from alphaledger.server import serve; raise SystemExit(serve({str(db)!r}))"],
@@ -29,6 +29,7 @@ class Client:
             text=True,
             encoding="utf-8",
             bufsize=1,
+            env=env,
         )
         self._id = 0
 
@@ -173,3 +174,28 @@ def test_bad_json_does_not_kill_the_server(client):
     error = json.loads(client.proc.stdout.readline())
     assert error["error"]["code"] == -32700
     assert client.send("ping")["result"] == {}, "server must survive a parse error"
+
+
+def test_frames_survive_a_non_utf8_console(tmp_path):
+    """The wire format must not depend on the host's console code page.
+
+    On Windows CI the default stdout encoding is cp1252, which turns the em dash in
+    every summary line into byte 0x97; a conforming client decoding UTF-8 then fails
+    on the whole frame. Forcing cp1252 here reproduces that on any platform, so the
+    bug cannot come back silently.
+    """
+    import os
+
+    env = {**os.environ, "PYTHONIOENCODING": "cp1252"}
+    client = Client(tmp_path / "cp1252.db", env=env)
+    try:
+        init = client.send("initialize", {"protocolVersion": "2024-11-05", "capabilities": {}})
+        assert init["result"]["serverInfo"]["name"] == "alphaledger"
+
+        factor = _grid(70, 40, 7)
+        forward = _grid(70, 40, 8)
+        is_err, result = client.call("evaluate", {"factor": {"values": factor}, "forward": {"values": forward}})
+        assert not is_err, result
+        assert "\u2014" in result["summary"] or "—" in result["summary"], "the em dash must round-trip"
+    finally:
+        client.close()
