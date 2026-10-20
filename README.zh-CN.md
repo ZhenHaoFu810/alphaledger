@@ -7,6 +7,7 @@
 <p align="center"><em>因子研究的试验账本</em></p>
 
 <p align="center">
+  <img alt="pypi" src="https://img.shields.io/pypi/v/alphaledger-mcp">
   <img alt="ci" src="https://github.com/ZhenHaoFu810/alphaledger/actions/workflows/ci.yml/badge.svg?branch=main">
   <img alt="tests" src="https://img.shields.io/badge/tests-104%20passed-brightgreen">
   <img alt="dependencies" src="https://img.shields.io/badge/dependencies-numpy%20only-blue">
@@ -117,8 +118,8 @@ claude mcp add alphaledger -- uvx alphaledger-mcp
 
 装好后工具以 `mcp__alphaledger__evaluate`、`mcp__alphaledger__gate` 的形式出现。
 
-<sub>两条路都需要先装一次 `uv`（`curl -LsSf https://astral.sh/uv/install.sh | sh`），因为 dsh 刻意不管 Python 环境。两个包目前都还没发布：在发布之前用
-`dsh plugin add ./dsh/alphaledger` 和 `uv pip install dist/alphaledger_mcp-0.1.0-py3-none-any.whl`。</sub>
+<sub>两条路都需要先装一次 `uv`（`curl -LsSf https://astral.sh/uv/install.sh | sh`），因为 dsh 刻意不管 Python 环境。server 已发布到 PyPI；
+npm 上的插件包还没发，所以 dsh 这条现在从源码目录装：`dsh plugin --profile web add ./dsh/alphaledger`。</sub>
 
 > 依赖只有 numpy 和标准库。scipy 会让安装体积翻倍、冷启动多几秒，而我们需要的两件事——秩相关和 Student-t 尾概率——几十行就能写完。详见 [`docs/METHOD.md`](docs/METHOD.md)。
 
@@ -157,7 +158,7 @@ claude mcp add alphaledger -- uvx alphaledger-mcp
 
 ## 状态
 
-**0.1.0。** 仓库已公开，PyPI 与 npm 包尚未发布。统计内核、身份判定、账本、MCP 接口均已实现并通过测试：104 条测试，`ruff` 与 `mypy` 干净，误报率 8.3%（12 组中 1 次），对 IC=0.03 的植入因子功效 4/4。
+**0.1.0。** 已发布到 PyPI（`alphaledger-mcp`）；npm 插件包尚未发布。统计内核、身份判定、账本、MCP 接口均已实现并通过测试：104 条测试，`ruff` 与 `mypy` 干净，误报率 8.3%（12 组中 1 次），对 IC=0.03 的植入因子功效 4/4。
 
 v0.2：akshare 适配器、一次性 OOS 测试锁、完整前视扰动协议。
 

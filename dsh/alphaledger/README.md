@@ -9,6 +9,9 @@ edit:
 $ dsh plugin --profile web add dsh-alphaledger
 ```
 
+<sub>The server itself is on PyPI as `alphaledger-mcp`; this bundle is not on npm yet,
+so install it from the checkout until it is: `dsh plugin --profile web add ./dsh/alphaledger`.</sub>
+
 That inserts one row into the profile's patch:
 
 ```yaml

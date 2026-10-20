@@ -7,6 +7,7 @@
 <p align="center"><em>A trial ledger for factor research.</em></p>
 
 <p align="center">
+  <img alt="pypi" src="https://img.shields.io/pypi/v/alphaledger-mcp">
   <img alt="ci" src="https://github.com/ZhenHaoFu810/alphaledger/actions/workflows/ci.yml/badge.svg?branch=main">
   <img alt="tests" src="https://img.shields.io/badge/tests-104%20passed-brightgreen">
   <img alt="dependencies" src="https://img.shields.io/badge/dependencies-numpy%20only-blue">
@@ -119,9 +120,9 @@ claude mcp add alphaledger -- uvx alphaledger-mcp
 Tools appear as `mcp__alphaledger__evaluate`, `mcp__alphaledger__gate`, and so on.
 
 <sub>Both routes need `uv` once (`curl -LsSf https://astral.sh/uv/install.sh | sh`),
-because dsh deliberately does not manage Python environments. Neither package is on
-PyPI or npm yet: until the release, use `dsh plugin add ./dsh/alphaledger` and
-`uv pip install dist/alphaledger_mcp-0.1.0-py3-none-any.whl`.</sub>
+because dsh deliberately does not manage Python environments. The server is on PyPI;
+the npm bundle is not published yet, so for now the dsh route installs from the
+checkout: `dsh plugin --profile web add ./dsh/alphaledger`.</sub>
 
 > Dependencies are numpy and the standard library. scipy would double the install and add seconds to a cold start, and the two things we needed from it — rank correlation and Student-t tails — are a few dozen lines. See [`docs/METHOD.md`](docs/METHOD.md).
 
@@ -160,7 +161,7 @@ No data layer — you bring a panel, and an akshare adapter is planned. No backt
 
 ## Status
 
-**0.1.0.** The repository is public; the PyPI and npm packages are not published yet. Statistics, identity, ledger and the MCP surface are implemented and tested: 104 tests, `ruff` and `mypy` clean, false-positive rate 8.3% (1 in 12 studies), power 4 of 4 on a planted IC of 0.03.
+**0.1.0.** On PyPI as `alphaledger-mcp`. The npm bundle is not published yet. Statistics, identity, ledger and the MCP surface are implemented and tested: 104 tests, `ruff` and `mypy` clean, false-positive rate 8.3% (1 in 12 studies), power 4 of 4 on a planted IC of 0.03.
 
 v0.2: akshare adapter, one-shot OOS test lock, full look-ahead perturbation.
 
