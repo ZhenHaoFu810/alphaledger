@@ -62,6 +62,12 @@ guard, not a substitute for a real install.
 
 ## Publishing
 
+Two fields are deliberately absent from the manifest. `repository` because the
+GitHub repo does not exist yet, and a placeholder URL is worse than none; add it
+once it does. `engines.dsh` because the version that introduced bundle support has
+not been verified here, and a guessed lower bound can block installs that would
+work — set it from the changelog before publishing.
+
 ```console
 $ cd dsh/alphaledger
 $ npm publish --access public
