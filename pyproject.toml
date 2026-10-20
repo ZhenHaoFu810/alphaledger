@@ -21,6 +21,12 @@ classifiers = [
 # p-values) is a few dozen lines in stats/. See docs/METHOD.md.
 dependencies = ["numpy>=1.26"]
 
+[project.urls]
+Homepage = "https://github.com/ZhenHaoFu810/alphaledger"
+Repository = "https://github.com/ZhenHaoFu810/alphaledger"
+Issues = "https://github.com/ZhenHaoFu810/alphaledger/issues"
+Method = "https://github.com/ZhenHaoFu810/alphaledger/blob/main/docs/METHOD.md"
+
 [project.optional-dependencies]
 frames = ["pandas>=2.0", "pyarrow>=15"]
 akshare = ["akshare>=1.12"]

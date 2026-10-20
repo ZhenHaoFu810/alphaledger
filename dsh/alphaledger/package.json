@@ -25,5 +25,10 @@
       "patch": "./cordis.patch.yml"
     }
   },
-  "license": "MIT"
+  "license": "MIT",
+  "homepage": "https://github.com/ZhenHaoFu810/alphaledger",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ZhenHaoFu810/alphaledger"
+  }
 }
